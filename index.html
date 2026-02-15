@@ -12,37 +12,27 @@
         
         body { background: #0a0a0a; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
         
-        /* Main Application Card */
         .app-container { background: #151515; width: 100%; max-width: 600px; padding: 30px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 1px solid #2a2a2a; position: relative; overflow: hidden; }
-        
-        /* Top Glow Effect */
         .app-container::before { content: ''; position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 80%; height: 100px; background: #ff1a1a; filter: blur(80px); opacity: 0.3; z-index: 0; }
-        
         .content-wrapper { position: relative; z-index: 1; }
 
         h1 { font-size: 28px; font-weight: 600; text-align: center; margin-bottom: 5px; background: linear-gradient(90deg, #ff4d4d, #ff1a1a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         p.subtitle { text-align: center; color: #777; font-size: 14px; margin-bottom: 30px; }
 
-        /* Input Area */
         .input-group { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
         input { padding: 16px; border-radius: 12px; border: 1px solid #333; background: #0f0f0f; color: #fff; font-size: 15px; outline: none; }
         input:focus { border-color: #ff1a1a; box-shadow: 0 0 15px rgba(255, 26, 26, 0.2); }
         
-        /* Main Button */
         .btn-primary { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; background: #ff1a1a; color: white; transition: 0.2s; gap: 10px; }
         .btn-primary:hover { background: #e60000; transform: translateY(-2px); }
         .btn-primary:disabled { background: #555; cursor: not-allowed; transform: none; }
 
-        /* Loader Animation inside button */
         .loader { border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #fff; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Status & Loading Text */
         #statusMessage { text-align: center; margin: 15px 0; font-size: 14px; height: 20px; color: #ffcc00; font-weight: 500; }
         
-        /* Result Box */
         .result-box { background: #0f0f0f; border: 1px solid #333; border-radius: 16px; margin-top: 10px; display: none; overflow: hidden; }
-        
         .box-header { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 12px 20px; border-bottom: 1px solid #333; }
         .box-header span { font-size: 14px; color: #aaa; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
         
@@ -52,13 +42,11 @@
 
         .transcript-content { padding: 20px; font-size: 15px; line-height: 1.8; color: #ddd; max-height: 300px; overflow-y: auto; text-align: justify; }
         
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0f0f0f; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #ff1a1a; }
 
-        /* Signature Footer */
         .footer { margin-top: 40px; text-align: center; color: #555; font-size: 13px; }
         .signature { font-family: 'Dancing Script', cursive; font-size: 28px; color: #ff1a1a; display: block; margin-top: 5px; text-shadow: 0 0 10px rgba(255,26,26,0.3); }
     </style>
@@ -86,7 +74,7 @@
                     <button class="copy-btn" id="copyBtn" onclick="copyTranscript()">Copy Text</button>
                 </div>
                 <div class="transcript-content" id="transcriptText">
-                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -107,7 +95,6 @@
             const btnText = document.getElementById('btnText');
             const copyBtn = document.getElementById('copyBtn');
 
-            // Reset UI
             resultBox.style.display = "none";
             copyBtn.innerText = "Copy Text";
             copyBtn.classList.remove('copied');
@@ -118,7 +105,6 @@
                 return;
             }
 
-            // Extract Video ID using Regex
             const videoIdMatch = urlInput.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
             if (!videoIdMatch) {
                 status.style.color = "#ff1a1a";
@@ -127,7 +113,6 @@
             }
             const videoId = videoIdMatch[1];
 
-            // Setup Loading State
             generateBtn.disabled = true;
             btnLoader.style.display = "block";
             btnText.innerText = "Processing...";
@@ -135,15 +120,21 @@
             status.innerText = "Captions dhoondh raha hoon... thoda ruko.";
 
             try {
-                // Fetching real data from proxy API
-                const response = await fetch(`https://subtitles-proxy.vercel.app/api/transcript?v=${videoId}`);
+                // Naya Working API URL
+                const apiUrl = "https://youtube-transcript-api-tau-one.vercel.app/transcript";
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_url: "https://www.youtube.com/watch?v=" + videoId })
+                });
+
                 const data = await response.json();
 
                 if (data && data.transcript) {
-                    // Mapping and joining the text
-                    const fullText = data.transcript.map(item => item.text).join(' ');
+                    // Ye API sidha full text deti hai
+                    const fullText = typeof data.transcript === 'string' ? data.transcript : data.transcript.map(item => item.text).join(' ');
                     
-                    // Displaying result
                     transcriptText.innerText = fullText;
                     resultBox.style.display = "block";
                     
@@ -155,10 +146,9 @@
                 }
             } catch (error) {
                 status.style.color = "#ff1a1a";
-                status.innerText = "Network Error! Browser ise block kar raha hai, code ko Vercel par host karein.";
+                status.innerText = "Network Error! Server busy hai ya link blocked hai.";
                 console.error(error);
             } finally {
-                // Resetting button state
                 generateBtn.disabled = false;
                 btnLoader.style.display = "none";
                 btnText.innerText = "Generate Transcript";
@@ -173,7 +163,6 @@
                 copyBtn.innerText = "Copied! ✔";
                 copyBtn.classList.add('copied');
                 
-                // 3 second baad wapas normal button
                 setTimeout(() => {
                     copyBtn.innerText = "Copy Text";
                     copyBtn.classList.remove('copied');
@@ -184,4 +173,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
