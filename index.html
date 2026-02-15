@@ -120,33 +120,25 @@
             status.innerText = "Captions dhoondh raha hoon... thoda ruko.";
 
             try {
-                // Naya Working API URL
-                const apiUrl = "https://youtube-transcript-api-tau-one.vercel.app/transcript";
+                // Naya Reliable API Endpoint
+                const apiUrl = `https://tubetext.vercel.app/youtube/transcript?video_id=${videoId}`;
                 
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ video_url: "https://www.youtube.com/watch?v=" + videoId })
-                });
-
+                const response = await fetch(apiUrl);
                 const data = await response.json();
 
-                if (data && data.transcript) {
-                    // Ye API sidha full text deti hai
-                    const fullText = typeof data.transcript === 'string' ? data.transcript : data.transcript.map(item => item.text).join(' ');
-                    
-                    transcriptText.innerText = fullText;
+                if (data && data.success && data.data && data.data.full_text) {
+                    transcriptText.innerText = data.data.full_text;
                     resultBox.style.display = "block";
                     
                     status.style.color = "#28a745";
                     status.innerText = "Transcript Generated Successfully! ✅";
                 } else {
                     status.style.color = "#ff1a1a";
-                    status.innerText = "Error: Is video mein captions available nahi hain.";
+                    status.innerText = "Error: Is video mein captions band hain ya uplabdh nahi hain.";
                 }
             } catch (error) {
                 status.style.color = "#ff1a1a";
-                status.innerText = "Network Error! Server busy hai ya link blocked hai.";
+                status.innerText = "Network Error! Server busy hai, kripya thodi der baad try karein.";
                 console.error(error);
             } finally {
                 generateBtn.disabled = false;
@@ -168,9 +160,9 @@
                     copyBtn.classList.remove('copied');
                 }, 3000);
             }).catch(err => {
-                alert("Bhai text copy nahi ho paya: " + err);
+                alert("Text copy karne mein dikkat aayi: " + err);
             });
         }
     </script>
 </body>
-    </html>
+</html>
