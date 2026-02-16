@@ -19,9 +19,10 @@
         h1 { font-size: 28px; font-weight: 600; text-align: center; margin-bottom: 5px; background: linear-gradient(90deg, #ff4d4d, #ff1a1a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         p.subtitle { text-align: center; color: #777; font-size: 14px; margin-bottom: 30px; }
 
-        .input-group { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
-        input { padding: 16px; border-radius: 12px; border: 1px solid #333; background: #0f0f0f; color: #fff; font-size: 15px; outline: none; }
-        input:focus { border-color: #ff1a1a; box-shadow: 0 0 15px rgba(255, 26, 26, 0.2); }
+        .input-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; }
+        input, select { padding: 15px; border-radius: 12px; border: 1px solid #333; background: #0f0f0f; color: #fff; font-size: 15px; outline: none; width: 100%; }
+        input:focus, select:focus { border-color: #ff1a1a; box-shadow: 0 0 15px rgba(255, 26, 26, 0.2); }
+        select { cursor: pointer; }
         
         .btn-primary { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; background: #ff1a1a; color: white; transition: 0.2s; gap: 10px; }
         .btn-primary:hover { background: #e60000; transform: translateY(-2px); }
@@ -40,7 +41,7 @@
         .copy-btn:hover { background: #ff1a1a; border-color: #ff1a1a; }
         .copy-btn.copied { background: #28a745; border-color: #28a745; }
 
-        .transcript-content { padding: 20px; font-size: 15px; line-height: 1.8; color: #ddd; max-height: 300px; overflow-y: auto; text-align: justify; }
+        .transcript-content { padding: 20px; font-size: 15px; line-height: 1.8; color: #ddd; max-height: 300px; overflow-y: auto; text-align: justify; direction: ltr; }
         
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0f0f0f; }
@@ -60,6 +61,12 @@
 
             <div class="input-group">
                 <input type="text" id="ytLink" placeholder="Paste YouTube Video Link Here...">
+                
+                <select id="langSelect">
+                    <option value="en">English (Default)</option>
+                    <option value="hi">Hindi (हिंदी)</option>
+                </select>
+
                 <button class="btn-primary" id="generateBtn" onclick="generateTranscript()">
                     <div class="loader" id="btnLoader"></div>
                     <span id="btnText">Generate Transcript</span>
@@ -85,11 +92,11 @@
     </div>
 
     <script>
-        // Aapki khud ki nikali hui Asli API Key
         const RAPID_API_KEY = "af9b706c37mshfd1981dbcc489d5p10c4fbjsn23c745c78f5b"; 
 
         async function generateTranscript() {
             const urlInput = document.getElementById('ytLink').value.trim();
+            const langInput = document.getElementById('langSelect').value; // Bhasha yahan se uthayega
             const status = document.getElementById('statusMessage');
             const resultBox = document.getElementById('resultBox');
             const transcriptText = document.getElementById('transcriptText');
@@ -120,8 +127,8 @@
             status.innerText = "Premium API se connect ho raha hai... 🚀";
 
             try {
-                // Aapke screenshot ke hisaab se RapidAPI ka endpoint
-                const url = `https://youtube-transcript3.p.rapidapi.com/api/transcript?videoId=${videoId}`;
+                // URL mein ab language code (&lang=hi ya &lang=en) bheja ja raha hai
+                const url = `https://youtube-transcript3.p.rapidapi.com/api/transcript?videoId=${videoId}&lang=${langInput}`;
                 
                 const options = {
                     method: 'GET',
@@ -134,7 +141,6 @@
                 const response = await fetch(url, options);
                 const data = await response.json();
 
-                // RapidAPI ka data parse karna
                 if (data && data.transcript) {
                     let fullText = "";
                     if (typeof data.transcript === 'string') {
@@ -151,7 +157,7 @@
                     status.innerText = "Transcript Generated Successfully! ✅";
                 } else {
                     status.style.color = "#ff1a1a";
-                    status.innerText = "Error: Is video mein captions band hain ya available nahi hain.";
+                    status.innerText = "Error: Is video mein " + (langInput === 'hi' ? 'Hindi' : 'English') + " captions available nahi hain.";
                     console.log("API Response Error:", data);
                 }
             } catch (error) {
