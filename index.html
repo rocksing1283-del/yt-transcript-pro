@@ -85,61 +85,8 @@
     </div>
 
     <script>
-        // Subtitles ko clean karne ka funtion
-        function cleanVTT(vtt) {
-            return vtt.replace(/^WEBVTT.*/gmi, '')
-                .replace(/^Kind:.*/gmi, '')
-                .replace(/^Language:.*/gmi, '')
-                .replace(/^Style:.*/gmi, '')
-                .replace(/^[0-9]{2}:[0-9]{2}:[0-9]{2}.*/gmi, '')
-                .replace(/<[^>]+>/g, '')
-                .replace(/&nbsp;/g, ' ')
-                .replace(/\n+/g, ' ')
-                .trim();
-        }
-
-        async function fetchTranscriptMultiLayer(videoId) {
-            // Engine 1: Dedicated Free Proxy API (Bypasses Cloud Block)
-            try {
-                const res1 = await fetch('https://youtube-transcript-api-tau-one.vercel.app/transcript', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ video_url: `https://www.youtube.com/watch?v=${videoId}` })
-                });
-                const data1 = await res1.json();
-                if (data1 && data1.transcript) {
-                    return typeof data1.transcript === 'string' ? data1.transcript : data1.transcript.map(t => t.text).join(' ');
-                }
-            } catch(e) { console.log("Engine 1 Limit Reached, Switching to Engine 2..."); }
-
-            // Engine 2: Decentralized Piped Network Fallback
-            const pipedServers = [
-                "https://pipedapi.kavin.rocks",
-                "https://pipedapi.tokhmi.xyz",
-                "https://api.piped.yt"
-            ];
-            
-            for (let server of pipedServers) {
-                try {
-                    const res2 = await fetch(`${server}/streams/${videoId}`);
-                    if (!res2.ok) continue;
-                    const data2 = await res2.json();
-                    
-                    if (data2.subtitles && data2.subtitles.length > 0) {
-                        let subTrack = data2.subtitles.find(s => s.code === 'hi') || 
-                                       data2.subtitles.find(s => s.code === 'en') || 
-                                       data2.subtitles[0];
-                        
-                        const subRes = await fetch(subTrack.url);
-                        if (!subRes.ok) continue;
-                        
-                        let vtt = await subRes.text();
-                        return cleanVTT(vtt);
-                    }
-                } catch(e) { console.log("Piped server failed", server); }
-            }
-            throw new Error("Dono Engines Fail!");
-        }
+        // Aapki khud ki nikali hui Asli API Key
+        const RAPID_API_KEY = "af9b706c37mshfd1981dbcc489d5p10c4fbjsn23c745c78f5b"; 
 
         async function generateTranscript() {
             const urlInput = document.getElementById('ytLink').value.trim();
@@ -149,11 +96,8 @@
             const generateBtn = document.getElementById('generateBtn');
             const btnLoader = document.getElementById('btnLoader');
             const btnText = document.getElementById('btnText');
-            const copyBtn = document.getElementById('copyBtn');
 
             resultBox.style.display = "none";
-            copyBtn.innerText = "Copy Text";
-            copyBtn.classList.remove('copied');
 
             if (!urlInput) {
                 status.style.color = "#ff1a1a";
@@ -161,11 +105,10 @@
                 return;
             }
 
-            // Advanced ID Extractor (Works with all types of links)
             const videoIdMatch = urlInput.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([0-9A-Za-z_-]{11})/);
-            if (!videoIdMatch || !videoIdMatch[1]) {
+            if (!videoIdMatch) {
                 status.style.color = "#ff1a1a";
-                status.innerText = "Sahi YouTube link daalo bhai! (jaise: https://youtu.be/...)";
+                status.innerText = "Sahi YouTube link daalo bhai!";
                 return;
             }
             const videoId = videoIdMatch[1];
@@ -174,23 +117,46 @@
             btnLoader.style.display = "block";
             btnText.innerText = "Processing...";
             status.style.color = "#ffcc00";
-            status.innerText = "Multi-Engine se text nikal raha hoon... 🚀";
+            status.innerText = "Premium API se connect ho raha hai... 🚀";
 
             try {
-                const fullText = await fetchTranscriptMultiLayer(videoId);
+                // Aapke screenshot ke hisaab se RapidAPI ka endpoint
+                const url = `https://youtube-transcript3.p.rapidapi.com/api/transcript?videoId=${videoId}`;
                 
-                if (fullText && fullText.length > 10) {
+                const options = {
+                    method: 'GET',
+                    headers: {
+                        'X-RapidAPI-Key': RAPID_API_KEY,
+                        'X-RapidAPI-Host': 'youtube-transcript3.p.rapidapi.com'
+                    }
+                };
+
+                const response = await fetch(url, options);
+                const data = await response.json();
+
+                // RapidAPI ka data parse karna
+                if (data && data.transcript) {
+                    let fullText = "";
+                    if (typeof data.transcript === 'string') {
+                        fullText = data.transcript;
+                    } else if (Array.isArray(data.transcript)) {
+                        fullText = data.transcript.map(t => t.text).join(' ');
+                    } else {
+                        fullText = JSON.stringify(data.transcript);
+                    }
+
                     transcriptText.innerText = fullText;
                     resultBox.style.display = "block";
                     status.style.color = "#28a745";
                     status.innerText = "Transcript Generated Successfully! ✅";
                 } else {
                     status.style.color = "#ff1a1a";
-                    status.innerText = "Error: Is video mein subtitles / captions uplabdh nahi hain.";
+                    status.innerText = "Error: Is video mein captions band hain ya available nahi hain.";
+                    console.log("API Response Error:", data);
                 }
             } catch (error) {
                 status.style.color = "#ff1a1a";
-                status.innerText = "Network Error! YouTube servers abhi block kar rahe hain, thodi der baad try karein.";
+                status.innerText = "Network Error! API se connection nahi ho paya.";
                 console.error(error);
             } finally {
                 generateBtn.disabled = false;
@@ -205,11 +171,13 @@
 
             navigator.clipboard.writeText(textToCopy).then(() => {
                 copyBtn.innerText = "Copied! ✔";
-                copyBtn.classList.add('copied');
+                copyBtn.style.background = "#28a745";
+                copyBtn.style.borderColor = "#28a745";
                 
                 setTimeout(() => {
                     copyBtn.innerText = "Copy Text";
-                    copyBtn.classList.remove('copied');
+                    copyBtn.style.background = "#2a2a2a";
+                    copyBtn.style.borderColor = "#444";
                 }, 3000);
             });
         }
